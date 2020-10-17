@@ -10,6 +10,7 @@ import java.io.ObjectOutputStream;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Vector;
 import java.util.Map;
 
 public class Main {
@@ -17,6 +18,7 @@ public class Main {
     private static final int PORT = 3000;
 
     private static Map<Socket,ObjectOutputStream> activeClients = new HashMap<Socket,ObjectOutputStream>();
+    private static Vector<String> usedNicknames = new Vector<String>();
 
     public static void main(String[] args) throws IOException,ClassNotFoundException {
         System.out.println("Chat server running.");
@@ -29,7 +31,7 @@ public class Main {
             Socket client = server.accept();
             activeClients.put(client, new ObjectOutputStream(client.getOutputStream()));
 
-            ClientTask clientTask = new ClientTask(client, activeClients);
+            ClientTask clientTask = new ClientTask(client, activeClients, usedNicknames);
             clientTask.start();
 
             System.out.println(activeClients.size() + " clients connected.");
@@ -40,12 +42,14 @@ public class Main {
 class ClientTask extends Thread {
     private final Socket client;
     private final Map<Socket,ObjectOutputStream> activeClients;
-    private final ObjectOutputStream myOutStream;
+    private final ObjectOutputStream selfOutStream;
+    private final Vector<String> usedNicknames;
 
-    public ClientTask(Socket client, Map<Socket,ObjectOutputStream> activeClients){
+    public ClientTask(Socket client, Map<Socket,ObjectOutputStream> activeClients, Vector<String> usedNicknames){
         this.client = client;
         this.activeClients = activeClients;
-        this.myOutStream = activeClients.get(client);
+        this.selfOutStream = activeClients.get(client);
+        this.usedNicknames = usedNicknames;
     }
 
     public void run(){
@@ -53,14 +57,29 @@ class ClientTask extends Thread {
             System.out.println("Client connected: " + client.getInetAddress().getHostAddress());
             ObjectInputStream inStream = new ObjectInputStream(client.getInputStream());
 
-            String nickname = "someone";
+            String nickname;
+            while(true){
+                nickname = (String)inStream.readObject();
+                if (usedNicknames.contains(nickname)) {
+                    sendToSelf("*** Sorry, this nickname is already taken, please choose another one:");
+                } else {
+                    usedNicknames.add(nickname);
+                    break;
+                }
+            }
 
-            sendToSelf("*** You are connected. Welcome!");
+            sendToSelf("*** Welcome! " + nickname + ". There are other " + (activeClients.size() - 1) + " people connected");
             sendToOthers("*** " + nickname + " just connected. Say them hi.");
         
             while(true){
                 String msg = (String)inStream.readObject();
-                sendToOthers(nickname + " says: " + msg);
+                if (msg.trim().equals("/exit")){
+                    client.close();
+                    sendToOthers("*** " + nickname + " left the chat");
+                    activeClients.remove(client);
+                }else{
+                    sendToOthers(nickname + " says: " + msg);
+                }
             }
         } catch(Exception ex) {
             System.out.println(ex);
@@ -68,10 +87,8 @@ class ClientTask extends Thread {
     }
 
     private void sendToOthers(String msg) throws IOException {
-        for (Map.Entry<Socket,ObjectOutputStream> other : activeClients.entrySet())
-            {
-                if (other.getKey() != this.client)
-                {
+        for (Map.Entry<Socket,ObjectOutputStream> other : activeClients.entrySet()) {
+                if (other.getKey() != this.client) {
                     ObjectOutputStream otherOutStream = other.getValue();
                     otherOutStream.writeObject(msg);
                     otherOutStream.flush();
@@ -80,6 +97,6 @@ class ClientTask extends Thread {
     }
 
     private void sendToSelf(String msg) throws IOException {
-        myOutStream.writeObject(msg);
+        selfOutStream.writeObject(msg);
     }
 }

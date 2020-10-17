@@ -25,16 +25,21 @@ public class Main {
         ObjectInputStream inStream = new ObjectInputStream(client.getInputStream());
 
         System.out.println("ok");
+        System.out.println("*** Welcome! Please provide a nickname:");
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in)); 
+        String nickname = reader.readLine();
+        outStream.writeObject(nickname);
 
         IncomingMsgsTask incomingMsgsTask = new IncomingMsgsTask(inStream);
         incomingMsgsTask.start();
 
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in)); 
+        boolean connected = true;
 
-        while(true){
+        while(connected){
             String msg = reader.readLine();
             if (msg.trim().equals("/exit")){
-                break;
+                connected = false;
             }
             outStream.writeObject(msg);
         }

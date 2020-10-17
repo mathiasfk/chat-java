@@ -1,5 +1,5 @@
 # chat-java
-Simple chat service using clean architecture.
+Simple chat service.
 
 ## Requisites
 
@@ -23,3 +23,7 @@ java -jar server/target/chat-server-with-dependencies.jar
 ```
 java -jar client/target/chat-client-with-dependencies.jar
 ```
+
+### Possible commands:
+
+* `/exit` to exit the chat.

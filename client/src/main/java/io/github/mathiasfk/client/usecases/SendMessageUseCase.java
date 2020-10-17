@@ -2,7 +2,6 @@ package io.github.mathiasfk.client.usecases;
 
 import io.github.mathiasfk.client.usecases.ports.Communication;
 import io.github.mathiasfk.domain.entities.Message;
-import io.github.mathiasfk.domain.entities.User;
 
 public class SendMessageUseCase {
 

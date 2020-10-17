@@ -1,10 +1,5 @@
 package io.github.mathiasfk.server;
 
-import io.github.mathiasfk.domain.entities.User;
-
-import io.github.mathiasfk.server.config.TestConfig;
-import io.github.mathiasfk.server.usecases.RegisterUserUseCase;
-
 import java.io.IOException;
 
 import java.net.Socket;

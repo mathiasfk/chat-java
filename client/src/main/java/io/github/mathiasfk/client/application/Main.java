@@ -1,11 +1,5 @@
 package io.github.mathiasfk.client;
 
-import io.github.mathiasfk.domain.entities.Message;
-import io.github.mathiasfk.domain.entities.User;
-
-import io.github.mathiasfk.client.config.TestConfig;
-import io.github.mathiasfk.client.usecases.SendMessageUseCase;
-
 import java.io.IOException;
 import java.net.Socket;
 import java.util.Date;

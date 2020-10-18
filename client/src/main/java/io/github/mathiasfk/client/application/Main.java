@@ -37,9 +37,13 @@ public class Main {
         boolean connected = true;
 
         while(connected){
-            String msg = reader.readLine();
-            if (msg.trim().equals("/exit")){
+            String msg = reader.readLine().trim();
+            if (msg.equals("/exit")){
                 connected = false;
+            }
+            if (msg.equals("/help")){
+                printHelp();
+                continue;
             }
             outStream.writeObject(msg);
         }
@@ -48,6 +52,13 @@ public class Main {
         client.close();
 
         System.out.println("*** Disconnected. Bye!");
+    }
+
+    private static void printHelp(){
+        System.out.println("*** Available commands:");
+        System.out.println(" /p <user> <msg>\tsend a private message to <user>.");
+        System.out.println(" /help\t\tshows this help.");
+        System.out.println(" /exit\t\tclose the chat.");
     }
 }
 

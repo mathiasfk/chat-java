@@ -73,12 +73,19 @@ class ClientTask extends Thread {
         
             while(true){
                 String msg = (String)inStream.readObject();
-                if (msg.trim().equals("/exit")){
+
+                if (msg.equals("/exit")){
                     client.close();
                     sendToOthers("*** " + nickname + " left the chat");
                     activeClients.remove(client);
-                }else{
-                    sendToOthers(nickname + " says: " + msg);
+                    
+                } else if (msg.startsWith("/p")){
+                    String dest = msg.split(" ")[1];
+                    String pvtMsg = msg.substring(dest.length() + 3).trim();
+                    sendToAll(nickname + " says to " + dest + ": " + pvtMsg);
+
+                } else {
+                    sendToAll(nickname + " says: " + msg);
                 }
             }
         } catch(Exception ex) {
@@ -93,6 +100,14 @@ class ClientTask extends Thread {
                     otherOutStream.writeObject(msg);
                     otherOutStream.flush();
                 }
+            }
+    }
+
+    private void sendToAll(String msg) throws IOException {
+        for (Map.Entry<Socket,ObjectOutputStream> other : activeClients.entrySet()) {
+                ObjectOutputStream otherOutStream = other.getValue();
+                otherOutStream.writeObject(msg);
+                otherOutStream.flush();
             }
     }
 

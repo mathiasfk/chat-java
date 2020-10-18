@@ -19,8 +19,8 @@ public class Message implements Serializable {
             this.content = content;
             this.pvt = pvt;
     }
-
     public String getFrom(){ return from; }
+    public void setFrom(String from){ this.from = from; }
     public String getTo(){ return to; }
     public String getContent(){ return content; }
     public boolean isPvt(){ return pvt; }

@@ -8,20 +8,22 @@ import java.io.ObjectOutputStream;
 
 import java.util.Vector;
 import java.util.Map;
+import java.util.Collection;
 
 import io.github.mathiasfk.common.Message;
+import io.github.mathiasfk.server.clients.ActiveClients;
 
 public class ClientTask extends Thread {
-    private final Socket client;
-    private final Map<Socket,ObjectOutputStream> activeClients;
-    private final ObjectOutputStream selfOutStream;
-    private final Vector<String> usedNicknames;
 
-    public ClientTask(Socket client, Map<Socket,ObjectOutputStream> activeClients, Vector<String> usedNicknames){
+    private final Socket client;
+    private final ActiveClients activeClients;
+    private final ObjectOutputStream selfOutStream;
+    private String name;
+
+    public ClientTask(Socket client, ActiveClients activeClients) throws IOException{
         this.client = client;
         this.activeClients = activeClients;
-        this.selfOutStream = activeClients.get(client);
-        this.usedNicknames = usedNicknames;
+        this.selfOutStream = new ObjectOutputStream(client.getOutputStream());
     }
 
     public void run(){
@@ -34,31 +36,34 @@ public class ClientTask extends Thread {
             while(true){
                 nicknameMsg = (Message)inStream.readObject();
                 nickname = nicknameMsg.getContent();
-                if (usedNicknames.contains(nickname)) {
-                    sendToSelf("*** Sorry, this nickname is already taken, please choose another one:");
+
+                if (activeClients.contains(nickname)) {
+                    sendToSelf("Sorry, this nickname is already taken, please choose another one:");
                 } else {
-                    usedNicknames.add(nickname);
+                    name = nickname;
+                    activeClients.put(nickname, this.selfOutStream);
                     break;
                 }
             }
 
-            sendToSelf("*** Welcome! " + nickname + ". There are other " + (activeClients.size() - 1) + " people connected");
-            sendToOthers("*** " + nickname + " just connected. Say them hi.");
+            sendToSelf("Welcome " + nickname + "! There are other " + (activeClients.size() - 1) + " people connected");
+            sendToOthers(nickname + " just connected. Say them hi.");
         
             while(true){
                 Message msg = (Message)inStream.readObject();
                 String msgContent = msg.getContent();
+                msg.setFrom(nickname);
 
                 if (msgContent.equals("/exit")){
                     client.close();
-                    sendToOthers("*** " + nickname + " left the chat");
-                    activeClients.remove(client);
+                    sendToOthers(nickname + " left the chat");
+                    activeClients.remove(nickname);
                     
                 } else if (msg.isPvt()){
-                    sendToAll(nickname + " says to " + msg.getTo() + ": " + msgContent);
+                    sendToOne(msg);
 
                 } else {
-                    sendToAll(nickname + " says: " + msgContent);
+                    sendToAll(msg);
                 }
             }
         } catch(Exception ex) {
@@ -66,28 +71,42 @@ public class ClientTask extends Thread {
         }
     }
 
-    private void sendToOthers(String content) throws IOException {
-        Message msg = new Message("someone","all",content,false);
-        for (Map.Entry<Socket,ObjectOutputStream> other : activeClients.entrySet()) {
-                if (other.getKey() != this.client) {
-                    ObjectOutputStream otherOutStream = other.getValue();
-                    otherOutStream.writeObject(msg);
-                    otherOutStream.flush();
-                }
+    private void sendToOthers(Message msg) throws IOException {
+        var streams = activeClients.getStreamCollection();
+        for(var each : streams){
+            if(each != selfOutStream){
+                each.writeObject(msg);
+                each.flush();
             }
+        }
     }
 
-    private void sendToAll(String content) throws IOException {
-        Message msg = new Message("someone","all",content,false);
-        for (Map.Entry<Socket,ObjectOutputStream> other : activeClients.entrySet()) {
-                ObjectOutputStream otherOutStream = other.getValue();
-                otherOutStream.writeObject(msg);
-                otherOutStream.flush();
-            }
+    private void sendToOthers(String content) throws IOException {
+        Message msg = new Message("server","all",content,false);
+        sendToOthers(msg);
+    }
+
+    private void sendToAll(Message msg) throws IOException {
+        var streams = activeClients.getStreamCollection();
+        for(var each : streams){
+            each.writeObject(msg);
+            each.flush();
+        }
+    }
+
+    private void sendToOne(Message msg) throws IOException {
+        var stream = activeClients.getStream(msg.getTo());
+        stream.writeObject(msg);
+        selfOutStream.writeObject(msg);
+    }
+
+    private void sendToSelf(Message msg) throws IOException {
+        selfOutStream.writeObject(msg);
     }
 
     private void sendToSelf(String content) throws IOException {
-        Message msg = new Message("someone","self",content,false);
-        selfOutStream.writeObject(msg);
+        Message msg = new Message("server",name,content,false);
+        sendToSelf(msg);
     }
+
 }

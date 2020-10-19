@@ -6,12 +6,8 @@ import java.net.Socket;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
-import java.util.Vector;
-import java.util.Map;
-import java.util.Collection;
-
 import io.github.mathiasfk.common.Message;
-import io.github.mathiasfk.server.clients.ActiveClients;
+import io.github.mathiasfk.server.validations.NicknameValidator;
 
 public class ClientTask extends Thread {
 
@@ -35,15 +31,21 @@ public class ClientTask extends Thread {
             String nickname;
             while(true){
                 nicknameMsg = (Message)inStream.readObject();
-                nickname = nicknameMsg.getContent();
+                nickname = nicknameMsg.getContent().trim();
 
                 if (activeClients.contains(nickname)) {
                     sendToSelf("Sorry, this nickname is already taken, please choose another one:");
-                } else {
-                    name = nickname;
-                    activeClients.put(nickname, this.selfOutStream);
-                    break;
+                    continue;
                 }
+
+                if (!NicknameValidator.validateNickname(nickname)){
+                    sendToSelf("Sorry, this nickname is invalid, please choose another one:");
+                    continue;
+                }
+
+                name = nickname;
+                activeClients.put(nickname, this.selfOutStream);
+                break;
             }
 
             sendToSelf("Welcome " + nickname + "! There are other " + (activeClients.size() - 1) + " people connected");

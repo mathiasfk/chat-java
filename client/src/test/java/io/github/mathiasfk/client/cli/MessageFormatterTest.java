@@ -7,9 +7,17 @@ import io.github.mathiasfk.common.Message;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class MessageFormatterTest {
+
+    @Test
+    void publicMessageToAll(){
+        Message msg = new Message("A","all","something",false);
+        String expectedText = "A says: something";
+
+        assertEquals(expectedText, MessageFormatter.formatMessage(msg));
+    }
     
     @Test
-    void publicMessage(){
+    void publicMessageToUser(){
         Message msg = new Message("A","B","something",false);
         String expectedText = "A says to B: something";
 

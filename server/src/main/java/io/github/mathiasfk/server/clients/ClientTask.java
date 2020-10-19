@@ -24,7 +24,6 @@ public class ClientTask extends Thread {
 
     public void run(){
         try{
-            System.out.println("Client connected: " + client.getInetAddress().getHostAddress());
             ObjectInputStream inStream = new ObjectInputStream(client.getInputStream());
 
             Message nicknameMsg;
@@ -62,7 +61,11 @@ public class ClientTask extends Thread {
                     activeClients.remove(nickname);
                     
                 } else if (msg.isPvt()){
-                    sendToOne(msg);
+                    if (activeClients.contains(msg.getTo())){
+                        sendToOne(msg);
+                    } else {
+                        sendToSelf("This user does not exist or is not connected.");
+                    }
 
                 } else {
                     sendToAll(msg);

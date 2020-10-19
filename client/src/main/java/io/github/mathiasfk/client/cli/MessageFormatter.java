@@ -16,7 +16,7 @@ public class MessageFormatter {
             if (msg.isPvt()){
                 formatted += " privately";
             }
-            if (msg.getTo() != "all"){
+            if (!msg.getTo().equals("all")){
                 formatted += " to " + msg.getTo();
             }
             formatted += ": " + msg.getContent();

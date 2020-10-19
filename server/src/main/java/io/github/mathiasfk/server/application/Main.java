@@ -28,10 +28,10 @@ public class Main {
             System.out.println("Waiting for connection...");
             Socket client = server.accept();
 
+            System.out.println("Client connected: " + client.getInetAddress().getHostAddress());
+
             ClientTask clientTask = new ClientTask(client, activeClients);
             clientTask.start();
-
-            System.out.println(activeClients.size() + " clients connected.");
         }
     }
 }
